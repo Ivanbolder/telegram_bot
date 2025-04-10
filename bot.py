@@ -1,35 +1,31 @@
 import asyncio
 from aiogram import Bot, Dispatcher, types
-from config import API_TOKEN, ADMIN_ID
+from aiogram.utils import executor
+from config import API_TOKEN
 from handlers import register_handlers
-from aiogram.types import BotCommand, BotCommandScopeAllPrivateChats, BotCommandScopeChat
 
+# 🟢 Создаём бота
 bot = Bot(token=API_TOKEN, parse_mode="HTML")
 dp = Dispatcher(bot)
 
-async def set_bot_commands(bot):
-    user_commands = [
-        BotCommand("start", "Начать регистрацию анкеты"),
-        BotCommand("myanketa", "Показать свою анкету"),
-        BotCommand("edit", "Редактировать анкету"),
-        BotCommand("search", "Поиск по имени/фамилии"),
-        BotCommand("top", "Топ по лайкам"),
-        BotCommand("counter", "Количество пользователей"),
-        BotCommand("help", "Помощь по командам")
-    ]
-    await bot.set_my_commands(user_commands, scope=BotCommandScopeAllPrivateChats())
-    admin_commands = user_commands + [
-        BotCommand("allankets", "Список всех анкет"),
-        BotCommand("delete_by_name", "Удалить анкету по имени"),
-        BotCommand("delete_all", "Удалить все анкеты")
-    ]
-    await bot.set_my_commands(admin_commands, scope=BotCommandScopeChat(chat_id=ADMIN_ID))
+# 🟢 Регистрируем хендлеры
+register_handlers(dp)
 
-async def main():
+# 🟢 FastAPI — фейковый веб-сервер для Render
+from fastapi import FastAPI
+import uvicorn
+
+fake_api = FastAPI()
+
+@fake_api.get("/")
+async def root():
+    return {"message": "Bot is running"}
+
+async def start_bot():
     print("Бот запущен!")
-    await set_bot_commands(bot)
-    register_handlers(dp)
     await dp.start_polling()
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    loop = asyncio.get_event_loop()
+    loop.create_task(start_bot())
+    uvicorn.run(fake_api, host="0.0.0.0", port=10000)
